@@ -11,7 +11,7 @@ from django.utils.module_loading import import_string
 from debug_toolbar import settings as dt_settings
 from debug_toolbar.toolbar import DebugToolbar
 
-_HTML_TYPES = ("text/html", "application/xhtml+xml")
+_HTML_TYPES = ("text/html", "application/xhtml+xml", "application/json")
 
 
 def show_toolbar(request):

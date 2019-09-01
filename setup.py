@@ -12,13 +12,13 @@ def readall(path):
 
 setup(
     name="django-debug-toolbar",
-    version="2.0",
+    version="2.1",
     description="A configurable set of panels that display various debug "
     "information about the current request/response.",
     long_description=readall("README.rst"),
     author="Rob Hudson",
     author_email="rob@cogit8.org",
-    url="https://github.com/jazzband/django-debug-toolbar",
+    url="https://github.com/ruandao/django-debug-toolbar",
     download_url="https://pypi.org/project/django-debug-toolbar/",
     license="BSD",
     packages=find_packages(exclude=("tests.*", "tests", "example")),

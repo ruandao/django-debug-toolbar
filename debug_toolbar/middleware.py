@@ -3,12 +3,22 @@ Debug Toolbar middleware
 """
 
 import re
+import threading
+import time
+
 from functools import lru_cache
 
+import debug_toolbar
+
+try:
+    from django.urls import reverse, resolve, Resolver404
+except ImportError: # django < 2.0
+    from django.core.urlresolvers import reverse, resolve, Resolver404
 from django.conf import settings
 from django.utils.module_loading import import_string
 
 from debug_toolbar import settings as dt_settings
+from debug_toolbar.cache import cache
 from debug_toolbar.toolbar import DebugToolbar
 
 _HTML_TYPES = ("text/html", "application/xhtml+xml", "application/json")
@@ -81,25 +91,19 @@ class DebugToolbarMiddleware:
         if toolbar.config["SHOW_COLLAPSED"] and "djdt" not in request.COOKIES:
             response.set_cookie("djdt", "hide", 864000)
 
-        # Insert the toolbar in the response.
-        content = response.content.decode(response.charset)
-        insert_before = dt_settings.get_config()["INSERT_BEFORE"]
-        pattern = re.escape(insert_before)
-        bits = re.split(pattern, content, flags=re.IGNORECASE)
-        if len(bits) > 1:
-            # When the toolbar will be inserted for sure, generate the stats.
+
+        if toolbar:
+            # for django-debug-toolbar >= 1.4
             for panel in reversed(toolbar.enabled_panels):
-                panel.generate_stats(request, response)
-                panel.generate_server_timing(request, response)
+                if hasattr(panel, 'generate_stats'):
+                    panel.generate_stats(request, response)
 
-            response = self.generate_server_timing_header(
-                response, toolbar.enabled_panels
-            )
+            cache_key = "%f" % time.time()
+            cache.set(cache_key, toolbar.render_toolbar())
 
-            bits[-2] += toolbar.render_toolbar()
-            response.content = insert_before.join(bits)
-            if response.get("Content-Length", None):
-                response["Content-Length"] = len(response.content)
+            response['X-debug-data-url'] = request.build_absolute_uri(
+                reverse('debug_data', urlconf=debug_toolbar.urls, kwargs={'cache_key': cache_key}))
+
         return response
 
     @staticmethod
